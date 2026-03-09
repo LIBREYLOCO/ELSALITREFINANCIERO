@@ -3073,8 +3073,9 @@ const App = (() => {
       html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
-    const blobUrl = await html2pdf().set(opt).from(element).outputPdf('bloburl');
-    window.open(blobUrl, '_blank');
+    const proyecto = (state.variables && state.variables.proyecto) ? state.variables.proyecto.replace(/\s+/g, '_') : 'vista';
+    opt.filename = `${currentView}-${proyecto}.pdf`;
+    await html2pdf().set(opt).from(element).save();
   } catch (err) {
     alert('Error al generar el PDF. Intenta de nuevo.');
   } finally {
@@ -3268,12 +3269,12 @@ const App = (() => {
       const el = document.getElementById('content-body');
       if (!el) continue;
 
-      // Captura con proporción exacta A4 landscape (evita distorsión)
+      // Captura con proporción exacta A4 landscape (escala 1.5 para evitar crashes de memoria)
       const A4_RATIO = 297 / 210;
       const capW = el.scrollWidth;
       const capH = Math.min(el.scrollHeight, Math.round(capW / A4_RATIO));
       const canvas = await html2canvas(el, {
-        scale: 2,
+        scale: 1.5,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -3297,8 +3298,8 @@ const App = (() => {
     // ── Footer final en el índice (Opcional: actualizar índice si es necesario, 
     // pero jspdf no permite editar páginas previas fácilmente sin plugins extra)
 
-    // Abrir en nueva pestaña → ver, imprimir o guardar como PDF
-    window.open(doc.output('bloburl'), '_blank');
+    // Descargar PDF (window.open es bloqueado por popup blockers en contextos async)
+    doc.save(`reporte-${proyecto.replace(/\s+/g, '_')}.pdf`);
 
   } catch (err) {
     console.error('Error al generar presentación:', err);
