@@ -1,4 +1,4 @@
-import { state, DEFAULTS, setState, setScenarios } from './core/State.js';
+import { state, DEFAULTS, setState, setScenarios, setRole } from './core/State.js';
 import { renderDashboard } from './ui/DashboardView.js';
 import { renderProyeccion } from './ui/ProyeccionView.js';
 import { renderParametros, renderConstruccion, renderPlusvalia } from './ui/ConfigViews.js';
@@ -7,18 +7,33 @@ import { renderParametros, renderConstruccion, renderPlusvalia } from './ui/Conf
  * Main Application Orchestrator
  */
 const App = (() => {
-    const container = document.getElementById('main-content');
-    const navItems = document.querySelectorAll('.nav-item');
+    let container;
+    let navItems;
 
     /**
      * Initialize Application
      */
     async function init() {
         console.log('Iniciando Aplicación Modular...');
+        container = document.getElementById('content-body');
+        navItems = document.querySelectorAll('.nav-item');
+
+        if (!container) {
+            console.error('Error: No se encontró el contenedor #content-body');
+            return;
+        }
+
         try {
             // Intentar cargar estado persistido
             const saved = localStorage.getItem('lyl_state');
             if (saved) setState(JSON.parse(saved));
+
+            // Cargar rol desde login
+            const auth = JSON.parse(localStorage.getItem('lyl_mock_auth') || '{}');
+            if (auth.role) setRole(auth.role);
+
+            // Sincronizar UI de rol
+            syncRoleUI();
 
             // Configurar navegación
             setupNavigation();
@@ -29,6 +44,15 @@ const App = (() => {
         } catch (error) {
             console.error('Error durante la inicialización:', error);
         }
+    }
+
+    function syncRoleUI() {
+        const badge = document.getElementById('user-role-badge');
+        if (!badge) return;
+
+        const role = (localStorage.getItem('lyl_mock_auth') ? JSON.parse(localStorage.getItem('lyl_mock_auth')).role : 'viewer') || 'viewer';
+        badge.textContent = role === 'admin' ? 'ADMINISTRADOR' : 'LECTURA';
+        badge.style.background = role === 'admin' ? '#2ecc71' : '#888';
     }
 
     /**
@@ -145,6 +169,34 @@ const App = (() => {
         renderActiveView();
     }
 
+    function logout() {
+        localStorage.removeItem('lyl_mock_auth');
+        location.reload();
+    }
+
+    function toggleSidebar() {
+        const app = document.getElementById('app-layout');
+        if (app) {
+            const collapsed = app.classList.toggle('sidebar-collapsed');
+            localStorage.setItem('lil_sidebar_collapsed', collapsed ? '1' : '0');
+        }
+    }
+
+    function resetState() {
+        if (!confirm("¿Restablecer todos los valores a los parámetros base?")) return;
+        setState(JSON.parse(JSON.stringify(DEFAULTS)));
+        localStorage.removeItem('lyl_state');
+        renderActiveView();
+    }
+
+    function exportCSV() {
+        alert("Exportación CSV en preparación...");
+    }
+
+    function exportFullReport() {
+        alert("Generación de Presentación PDF en preparación...");
+    }
+
     function addShowroomItem() {
         if (!state.showroomItems) state.showroomItems = [];
         state.showroomItems.push({
@@ -170,7 +222,12 @@ const App = (() => {
         addTicketTier,
         removeTicketTier,
         addShowroomItem,
-        removeShowroomItem
+        removeShowroomItem,
+        logout,
+        toggleSidebar,
+        resetState,
+        exportCSV,
+        exportFullReport
     };
 })();
 
