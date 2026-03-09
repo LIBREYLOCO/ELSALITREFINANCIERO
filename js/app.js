@@ -2974,14 +2974,11 @@ const App = (() => {
       }
     });
     try {
-      // Usar html2canvas DIRECTAMENTE (expuesto globalmente por html2pdf bundle).
-      // html2pdf().from(el) clona el elemento a un contenedor off-screen, lo que
-      // produce páginas en blanco. html2canvas(el) captura el elemento in-situ.
       return await html2canvas(el, {
-        scale: scale,
+        scale: scale || 2.4, // Resolución premium (aprox 220-300 dpi en A4)
         useCORS: true,
         allowTaint: true,
-        backgroundColor: bgColor || '#f4f7fa',
+        backgroundColor: bgColor || '#ffffff', // Fondo sólido para evitar transparencias
         logging: false,
         foreignObjectRendering: false,
         scrollX: 0,
@@ -2997,15 +2994,48 @@ const App = (() => {
   }
 
   // Añade un canvas como imagen centrada y escalada a una página de jsPDF
-  function _addCanvasToPage(doc, canvas, PAGE_W, PAGE_H, MARGIN) {
+  function _addCanvasToPage(doc, canvas, PAGE_W, PAGE_H, MARGIN, pageTitle, pageNum, totalPages) {
     const printW = PAGE_W - MARGIN * 2;
-    const printH = PAGE_H - MARGIN * 2;
+    const printH = PAGE_H - MARGIN * 3; // Menos espacio para header/footer
     const ar = canvas.width / canvas.height;
     let imgW = printW, imgH = imgW / ar;
     if (imgH > printH) { imgH = printH; imgW = imgH * ar; }
     const x = MARGIN + (printW - imgW) / 2;
-    const y = MARGIN + (printH - imgH) / 2;
-    doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', x, y, imgW, imgH);
+    const y = MARGIN + 6 + (printH - imgH) / 2; // Desplazado abajo por el header
+
+    // 1. Watermark (Fondo sutil)
+    doc.saveGraphicsState();
+    doc.setGState(new doc.GState({ opacity: 0.03 }));
+    doc.setFontSize(40);
+    doc.setTextColor(30, 41, 59);
+    doc.text('PROYECTOS 4L · PROYECTOS 4L · PROYECTOS 4L', PAGE_W / 2, PAGE_H / 2, { align: 'center', angle: 45 });
+    doc.restoreGraphicsState();
+
+    // 2. Imagen del contenido
+    doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', x, y, imgW, imgH);
+
+    // 3. Header branding
+    doc.setFillColor(30, 41, 59); // Navy
+    doc.rect(MARGIN, MARGIN, 2, 8, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont('Montserrat', 'bold');
+    doc.text(pageTitle ? pageTitle.toUpperCase() : '', MARGIN + 4, MARGIN + 6);
+    doc.setFont('Montserrat', 'normal');
+    const proyecto = (state.variables && state.variables.proyecto) ? state.variables.proyecto : 'L&L';
+    doc.setTextColor(160, 160, 160);
+    doc.text(proyecto.toUpperCase(), PAGE_W - MARGIN, MARGIN + 6, { align: 'right' });
+
+    // 4. Footer corporativo
+    const footerY = PAGE_H - MARGIN;
+    doc.setDrawColor(220, 220, 220);
+    doc.line(MARGIN, footerY - 4, PAGE_W - MARGIN, footerY - 4);
+    doc.setFontSize(7);
+    doc.setTextColor(180, 180, 180);
+    doc.text(`CONFIDENCIAL · PROPIEDAD DE PROYECTOS 4L · ${new Date().getFullYear()}`, MARGIN, footerY);
+    doc.text(`PÁGINA ${pageNum} DE ${totalPages}`, PAGE_W - MARGIN, footerY, { align: 'right' });
+    doc.setTextColor(197, 160, 89);
+    doc.text('ESTE DOCUMENTO ES UNA SIMULACIÓN FINANCIERA Y NO REPRESENTA UNA OFERTA VINCULANTE.', PAGE_W / 2, footerY, { align: 'center' });
   }
 
   async function exportCurrentViewToPDF() {
@@ -3031,7 +3061,7 @@ const App = (() => {
       const { jsPDF } = window.jspdf;
       const PAGE_W = 297, PAGE_H = 210, MARGIN = 7;
       const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
-      _addCanvasToPage(doc, canvas, PAGE_W, PAGE_H, MARGIN);
+      _addCanvasToPage(doc, canvas, PAGE_W, PAGE_H, MARGIN, currentView.toUpperCase(), 1, 1);
 
       // Abrir en nueva pestaña → el usuario elige imprimir o guardar como PDF
       window.open(doc.output('bloburl'), '_blank');
@@ -3104,43 +3134,98 @@ const App = (() => {
       { view: 'escenarios-financieros', title: 'Escenarios Financieros' },
     ];
 
-    // ── Portada ──────────────────────────────────────────────────
+    // ── Portada Premium ──────────────────────────────────────────
     const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
 
-    // Fondo navy
-    doc.setFillColor(30, 41, 59);
-    doc.rect(0, 0, PAGE_W, PAGE_H, 'F');
-    // Barra dorada inferior
-    doc.setFillColor(197, 160, 89);
-    doc.rect(0, PAGE_H - 4, PAGE_W, 4, 'F');
-    // Línea vertical dorada
-    doc.setFillColor(197, 160, 89);
-    doc.rect(MARGIN, MARGIN + 12, 2, 48, 'F');
+    // Filtro para efectos de opacidad coordinados
+    const GState = doc.GState;
 
-    // Logo desde el DOM (ya cargado en la página)
+    // Fondo Navy Profundo
+    doc.setFillColor(25, 35, 50);
+    doc.rect(0, 0, PAGE_W, PAGE_H, 'F');
+
+    // Elementos decorativos dorados (Líneas de marco)
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(0.5);
+    doc.rect(MARGIN, MARGIN, PAGE_W - MARGIN * 2, PAGE_H - MARGIN * 2, 'S');
+
+    // Logo central (Si existe)
+    let logoData = null;
     try {
       const logoEl = document.querySelector('.brand-logo-wrap img');
-      if (logoEl && logoEl.complete && logoEl.naturalWidth > 0) {
+      if (logoEl && logoEl.complete) {
         const lc = document.createElement('canvas');
-        lc.width = logoEl.naturalWidth;
-        lc.height = logoEl.naturalHeight;
+        lc.width = logoEl.naturalWidth; lc.height = logoEl.naturalHeight;
         lc.getContext('2d').drawImage(logoEl, 0, 0);
-        const lData = lc.toDataURL('image/png');
-        const lH = 38;
-        const lW = lH * (logoEl.naturalWidth / logoEl.naturalHeight);
-        doc.addImage(lData, 'PNG', PAGE_W - MARGIN - lW, MARGIN + 10, lW, lH);
+        logoData = lc.toDataURL('image/png');
+        const lH = 45; const lW = lH * (lc.width / lc.height);
+        doc.addImage(logoData, 'PNG', (PAGE_W - lW) / 2, 40, lW, lH);
       }
-    } catch (e) { /* sin logo */ }
+    } catch (e) { }
 
-    // Texto portada
-    doc.setTextColor(197, 160, 89); doc.setFontSize(8);
-    doc.text('PROYECTOS 4L  —  MOTOR INMOBILIARIO', MARGIN + 8, MARGIN + 20);
-    doc.setTextColor(255, 255, 255); doc.setFontSize(22);
-    doc.text(proyecto.substring(0, 52), MARGIN + 8, MARGIN + 38);
-    doc.setFontSize(12); doc.setTextColor(160, 160, 160);
-    doc.text('Análisis Financiero Completo', MARGIN + 8, MARGIN + 52);
-    doc.setFontSize(9); doc.setTextColor(110, 110, 110);
-    doc.text(`Generado el ${fecha}  ·  ${pages.length} secciones`, MARGIN + 8, PAGE_H - MARGIN - 8);
+    // Tipografía de Portada
+    doc.setTextColor(197, 160, 89);
+    doc.setFont('Montserrat', 'normal');
+    doc.setFontSize(10);
+    doc.text('ESTRATEGIA PATRIMONIAL & FINANCIERA', PAGE_W / 2, 95, { align: 'center', charSpace: 3 });
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(28);
+    doc.setFont('Montserrat', 'bold');
+    doc.text(proyecto.toUpperCase(), PAGE_W / 2, 115, { align: 'center', charSpace: 1 });
+
+    doc.setDrawColor(197, 160, 89);
+    doc.setLineWidth(1);
+    doc.line(PAGE_W / 2 - 40, 125, PAGE_W / 2 + 40, 125);
+
+    doc.setFontSize(14);
+    doc.setFont('Montserrat', 'normal');
+    doc.setTextColor(180, 180, 180);
+    doc.text('LIBERTAD · LOCURA · LIDERAZGO · LEGADO', PAGE_W / 2, 140, { align: 'center', charSpace: 2 });
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 110, 130);
+    doc.text(`MEXICO, ${new Date().getFullYear()}  |  REPORTE DE INVERSIÓN`, PAGE_W / 2, 180, { align: 'center' });
+
+    // ── Índice Interactivo ───────────────────────────────────────
+    doc.addPage();
+    doc.setFillColor(250, 250, 250);
+    doc.rect(0, 0, PAGE_W, PAGE_H, 'F');
+
+    doc.setFillColor(30, 41, 59);
+    doc.rect(MARGIN, MARGIN, 2, 12, 'F');
+    doc.setFontSize(18);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont('Montserrat', 'bold');
+    doc.text('CONTENIDO DEL REPORTE', MARGIN + 6, MARGIN + 9);
+
+    doc.setFontSize(10);
+    doc.setFont('Montserrat', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Haz clic en cualquier sección para navegar directamente.', MARGIN + 6, MARGIN + 16);
+
+    let currentY = MARGIN + 30;
+    const col1X = MARGIN + 10;
+    const col2X = PAGE_W / 2 + 10;
+
+    pages.forEach((p, idx) => {
+      const isCol2 = idx >= Math.ceil(pages.length / 2);
+      const x = isCol2 ? col2X : col1X;
+      const y = isCol2 ? MARGIN + 30 + (idx - Math.ceil(pages.length / 2)) * 10 : MARGIN + 30 + idx * 10;
+
+      // Dibujar punto dorado
+      doc.setFillColor(197, 160, 89);
+      doc.circle(x - 5, y - 1, 1, 'F');
+
+      // Texto con link (Se añade el link después de generar todas las páginas)
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(11);
+      doc.text(p.title, x, y);
+
+      // Guardar posición para el link (jsPDF usa índices 1-based, portada es 1, índice es 2)
+      p.pageNumInPdf = idx + 3;
+      doc.link(x, y - 4, 80, 6, { pageNumber: p.pageNumInPdf });
+    });
 
     // ── Captura de cada vista navegando en el DOM real ───────────
     try {
@@ -3167,13 +3252,17 @@ const App = (() => {
         if (!el) continue;
 
         // Captura el contenido completo con escala optimizada para A4
-        const canvas = await _captureFullElement(el, 1.6, '#f4f7fa');
+        const canvas = await _captureFullElement(el, 2.4, '#ffffff');
 
         doc.addPage();
-        _addCanvasToPage(doc, canvas, PAGE_W, PAGE_H, MARGIN);
+        const totalPags = pages.length + 2; // + portada + índice
+        _addCanvasToPage(doc, canvas, PAGE_W, PAGE_H, MARGIN, page.title, i + 3, totalPags);
 
-        setProgress(page.title, Math.round(((i + 1) / pages.length) * 100), `Página ${i + 1} de ${pages.length} — OK`);
+        setProgress(page.title, Math.round(((i + 1) / pages.length) * 100), `Página ${i + 3} de ${totalPags} — OK`);
       }
+
+      // ── Footer final en el índice (Opcional: actualizar índice si es necesario, 
+      // pero jspdf no permite editar páginas previas fácilmente sin plugins extra)
 
       // Abrir en nueva pestaña → ver, imprimir o guardar como PDF
       window.open(doc.output('bloburl'), '_blank');
