@@ -173,6 +173,64 @@ const App = (() => {
         }
       }));
     }
+
+    const ctxProy = document.getElementById('chart-proyeccion-10');
+    if (ctxProy) {
+      const v = state.variables;
+      const anios = Number(v.aniosProyeccion) || 10;
+      const inflacion = (Number(v.inflacionAnualRentas) || 5) / 100;
+
+      // Cálculo simplificado de ingreso neto anual (Ingreso Mensual * 12)
+      const m2Comercial = Number(v.m2ComercialPB) || 0;
+      const m2Hotel1 = Number(v.m2HotelNivel1) || 0;
+      const m2Hotel2 = Number(v.m2HotelNivel2) || 0;
+      const rMensual = (m2Comercial * (Number(v.rentaM2Comercial) || 0))
+        + (m2Hotel1 * (Number(v.rentaM2HotelNivel1) || 0))
+        + (m2Hotel2 * (Number(v.rentaM2HotelNivel2) || 0))
+        + ((Number(v.cochesDiarios) || 350) * (Number(v.precioPorCoche) || 50) * 30);
+
+      const labels = [];
+      const data = [];
+      let baseAnual = rMensual * 12;
+
+      for (let i = 1; i <= anios; i++) {
+        labels.push(`Año ${i}`);
+        data.push(Math.round(baseAnual));
+        baseAnual *= (1 + inflacion);
+      }
+
+      charts.push(new Chart(ctxProy, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Flujo de Caja Bruto Anual',
+            data: data,
+            borderColor: '#C5A059',
+            backgroundColor: 'rgba(197, 160, 89, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#3A1C15'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              grid: { color: getComputedStyle(document.body).getPropertyValue('--border') },
+              ticks: {
+                color: getComputedStyle(document.body).getPropertyValue('--text'),
+                callback: (val) => MXN.format(val)
+              }
+            },
+            x: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--text') } }
+          },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => M(ctx.raw) } } }
+        }
+      }));
+    }
   }
 
   // Formateadores Globales
@@ -478,17 +536,24 @@ const App = (() => {
 
     <!-- Gráficos Interactivos -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
-      <div class="card" style="padding:24px; height:350px;">
+      <div class="card animate-scale" style="padding:24px; height:350px;">
         <div style="font-size:13px; font-weight:600; color:var(--navy); margin-bottom:16px;">Distribución de Inventario (Tickets)</div>
         <div style="flex:1; position:relative; min-height:0;">
           <canvas id="chart-inventario"></canvas>
         </div>
       </div>
-      <div class="card" style="padding:24px; height:350px;">
+      <div class="card animate-scale" style="padding:24px; height:350px;">
         <div style="font-size:13px; font-weight:600; color:var(--navy); margin-bottom:16px;">Ingresos Operativos por Fuente</div>
         <div style="flex:1; position:relative; min-height:0;">
           <canvas id="chart-ingresos"></canvas>
         </div>
+      </div>
+    </div>
+
+    <div class="card animate-scale" style="padding:24px; height:350px; margin-bottom:20px;">
+      <div style="font-size:13px; font-weight:600; color:var(--navy); margin-bottom:16px;">Proyección de Flujo de Caja Bruto (Años 1-${state.variables.aniosProyeccion || 10})</div>
+      <div style="flex:1; position:relative; min-height:0;">
+        <canvas id="chart-proyeccion-10"></canvas>
       </div>
     </div>
 
