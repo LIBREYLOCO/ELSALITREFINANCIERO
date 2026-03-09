@@ -93,7 +93,9 @@ const App = (() => {
       { nombre: '', cantidad: 1, costo: 0 },
       { nombre: '', cantidad: 1, costo: 0 },
       { nombre: '', cantidad: 1, costo: 0 }
-    ]
+    ],
+    inversionistas: [],
+    pagos: []
   };
 
   let state = {};
@@ -173,7 +175,12 @@ const App = (() => {
     const ticketsModelo = Math.floor(maxTickets * (pctModelo / 100));
 
     // Entradas
-    const entradas = state.tickets.reduce((s, t) => s + (Number(t.cantidad) || 0) * (Number(t.precio) || 0), 0);
+    const entradasPactadas = state.tickets.reduce((s, t) => s + (Number(t.cantidad) || 0) * (Number(t.precio) || 0), 0);
+    const entradasReales = (state.pagos || []).reduce((s, p) => s + (Number(p.monto) || 0), 0);
+
+    // Si hay pagos registrados, priorizamos el ingreso real para el dashboard
+    const entradas = (state.pagos && state.pagos.length > 0) ? entradasReales : entradasPactadas;
+
     const ticketsVendidosConf = state.tickets.reduce((s, t) => s + (Number(t.cantidad) || 0), 0);
     const ticketsTotales = ticketsVendidosConf + ticketsModelo;
     const pclMeta = meta > 0 ? (entradas / meta) * 100 : 0;
@@ -2229,6 +2236,258 @@ const App = (() => {
     navigate('usuarios');
   }
 
+  // ── LÓGICA DE LEVANTAMIENTO (LEDGER) ──
+  function addInversionista() {
+    const nombre = document.getElementById('inv_nombre').value;
+    const correo = document.getElementById('inv_correo').value;
+    const faseId = parseInt(document.getElementById('inv_fase').value);
+    const tickets = parseInt(document.getElementById('inv_tickets').value);
+
+    if (!nombre || isNaN(faseId) || isNaN(tickets) || tickets <= 0) {
+      alert('Por favor completa los campos obligatorios');
+      return;
+    }
+
+    const fase = state.tickets.find(t => t.id === faseId);
+    if (!fase) return;
+
+    const nuevo = {
+      id: Date.now(),
+      nombre,
+      correo,
+      faseId,
+      faseNombre: fase.nombre,
+      tickets,
+      precioPactado: fase.precio,
+      montoPactado: fase.precio * tickets,
+      fechaRegistro: new Date().toISOString(),
+      estatus: 'Activo'
+    };
+
+    if (!state.inversionistas) state.inversionistas = [];
+    state.inversionistas.push(nuevo);
+    saveState();
+    navigate('ledger');
+  }
+
+  function deleteInversionista(id) {
+    if (!confirm('¿Eliminar inversionista y todos sus pagos asociados?')) return;
+    state.inversionistas = state.inversionistas.filter(i => i.id !== id);
+    state.pagos = (state.pagos || []).filter(p => p.inversionistaId !== id);
+    saveState();
+    navigate('ledger');
+  }
+
+  function addPago() {
+    const invId = parseInt(document.getElementById('pago_inv').value);
+    const monto = parseFloat(document.getElementById('pago_monto').value);
+    const fecha = document.getElementById('pago_fecha').value;
+    const metodo = document.getElementById('pago_metodo').value;
+
+    if (isNaN(invId) || isNaN(monto) || monto <= 0 || !fecha) {
+      alert('Completa los datos del pago');
+      return;
+    }
+
+    const nuevoPago = {
+      id: Date.now() + 1, // evitar colisión
+      inversionistaId: invId,
+      monto,
+      fecha,
+      metodo
+    };
+
+    if (!state.pagos) state.pagos = [];
+    state.pagos.push(nuevoPago);
+    saveState();
+    navigate('ledger');
+  }
+
+  function deletePago(id) {
+    if (!confirm('¿Eliminar este registro de pago?')) return;
+    state.pagos = state.pagos.filter(p => p.id !== id);
+    saveState();
+    navigate('ledger');
+  }
+
+  function renderLedger() {
+    const invs = state.inversionistas || [];
+    const pagos = state.pagos || [];
+    const ticketsFases = (state.tickets || []).filter(t => !t.esAportado);
+
+    let totalRecaudado = pagos.reduce((s, p) => s + p.monto, 0);
+    let totalPactado = invs.reduce((s, i) => s + i.montoPactado, 0);
+
+    let html = `
+      <div class="section-header">
+        <div>
+          <div class="section-title">Levantamiento de Capital</div>
+          <div class="section-sub">Seguimiento Real de Inversionistas (Ledger)</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:24px;">
+        <div class="kpi-card" data-tooltip="Total de capital comprometido en contratos firmados.">
+          <div class="kpi-label">Comprometido <span class="info-icon">i</span></div>
+          <div class="kpi-value">${M(totalPactado)}</div>
+        </div>
+        <div class="kpi-card status-high" data-tooltip="Capital total ingresado a caja por abonos reales.">
+          <div class="kpi-label">Recaudado <span class="info-icon">i</span></div>
+          <div class="kpi-value">${M(totalRecaudado)}</div>
+        </div>
+        <div class="kpi-card ${totalPactado - totalRecaudado > 0 ? 'status-mid' : ''}" data-tooltip="Saldo pendiente por cobrar de los contratos vigentes.">
+          <div class="kpi-label">Por Cobrar <span class="info-icon">i</span></div>
+          <div class="kpi-value">${M(totalPactado - totalRecaudado)}</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:24px;">
+        <!-- Registro Inversionista -->
+        <div class="card" style="padding:20px;">
+          <h3 class="admin-form-title">Nuevo Inversionista</h3>
+          <div class="form-grid" style="grid-template-columns: 1fr; gap:12px;">
+            <div class="form-group">
+              <label>Nombre Completo / Razón Social</label>
+              <input type="text" id="inv_nombre" placeholder="Ej: Juan Pérez">
+            </div>
+            <div class="form-group">
+              <label>Correo Electrónico</label>
+              <input type="email" id="inv_correo" placeholder="ejemplo@correo.com">
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div class="form-group">
+                <label>Fase de Entrada</label>
+                <select id="inv_fase">
+                  ${ticketsFases.map(t => `<option value="${t.id}">${t.nombre} (${M(t.precio)})</option>`).join('')}
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tickets</label>
+                <input type="number" id="inv_tickets" value="1" min="1">
+              </div>
+            </div>
+            <button class="btn-primary" onclick="App.addInversionista()" style="width:100%; margin-top:8px;">Registrar Inversionista</button>
+          </div>
+        </div>
+
+        <!-- Registro de Pago -->
+        <div class="card" style="padding:20px;">
+          <h3 class="admin-form-title">Registrar Abono / Pago</h3>
+          <div class="form-grid" style="grid-template-columns: 1fr; gap:12px;">
+            <div class="form-group">
+              <label>Inversionista</label>
+              <select id="pago_inv">
+                ${invs.map(i => `<option value="${i.id}">${i.nombre}</option>`).join('')}
+              </select>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div class="form-group">
+                <label>Monto del Abono</label>
+                <input type="number" id="pago_monto" placeholder="$ 0">
+              </div>
+              <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" id="pago_fecha" value="${new Date().toISOString().split('T')[0]}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Método de Pago</label>
+              <select id="pago_metodo">
+                <option value="Transferencia">Transferencia</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Aportación">Aportación</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <button class="btn-primary" onclick="App.addPago()" style="width:100%; margin-top:8px;">Confirmar Pago</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de Inversionistas -->
+      <div class="card" style="margin-bottom:24px;">
+        <div style="padding:16px; border-bottom:1px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:13px; font-weight:600; margin:0;">Seguimiento de Socios</h3>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Inversionista</th>
+              <th>Fase</th>
+              <th class="text-right">Tickets</th>
+              <th class="text-right">Pactado</th>
+              <th class="text-right">Pagado</th>
+              <th class="text-right">Saldo</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${invs.length === 0 ? '<tr><td colspan="7" class="text-center" style="padding:30px; color:var(--text-muted);">No hay inversionistas registrados aún.</td></tr>' : ''}
+            ${invs.map(i => {
+      const pagado = pagos.filter(p => p.inversionistaId === i.id).reduce((s, p) => s + p.monto, 0);
+      const saldo = i.montoPactado - pagado;
+      const statusClass = saldo <= 0 ? 'value-high' : 'value-mid';
+      return `
+                <tr>
+                  <td>
+                    <div style="font-weight:600; color:var(--navy);">${i.nombre}</div>
+                    <div style="font-size:10px; color:var(--text-muted);">${i.correo}</div>
+                  </td>
+                  <td><span class="status-indicator">${i.faseNombre}</span></td>
+                  <td class="text-right">${i.tickets}</td>
+                  <td class="text-right">${M(i.montoPactado)}</td>
+                  <td class="text-right ${statusClass}">${M(pagado)}</td>
+                  <td class="text-right ${saldo > 0 ? 'value-low' : ''}">${M(saldo)}</td>
+                  <td class="text-center">
+                    <button class="btn-table-action" onclick="App.deleteInversionista(${i.id})" title="Eliminar inversionista">🗑</button>
+                  </td>
+                </tr>
+              `;
+    }).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Libro Diario (Últimos pagos) -->
+      <div class="card">
+        <div style="padding:16px; border-bottom:1px solid rgba(0,0,0,0.05);">
+          <h3 style="font-size:13px; font-weight:600; margin:0;">Libro Diario de Pagos</h3>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Inversionista</th>
+              <th>Fase</th>
+              <th>Método</th>
+              <th class="text-right">Monto</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pagos.length === 0 ? '<tr><td colspan="6" class="text-center" style="padding:30px; color:var(--text-muted);">No se han registrado pagos todavía.</td></tr>' : ''}
+            ${pagos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).map(p => {
+      const inv = invs.find(i => i.id === p.inversionistaId) || { nombre: 'N/A', faseNombre: 'N/A' };
+      return `
+                <tr>
+                  <td>${p.fecha}</td>
+                  <td style="font-weight:600;">${inv.nombre}</td>
+                  <td>${inv.faseNombre}</td>
+                  <td><span class="status-indicator">${p.metodo}</span></td>
+                  <td class="text-right" style="font-weight:700; color:var(--status-high);">${M(p.monto)}</td>
+                  <td class="text-center">
+                    <button class="btn-table-action" onclick="App.deletePago(${p.id})" title="Eliminar pago">🗑</button>
+                  </td>
+                </tr>
+              `;
+    }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    return html;
+  }
+
   const RENDERERS = {
     dashboard: renderDashboard,
     parametros: renderParametros,
@@ -2241,7 +2500,8 @@ const App = (() => {
     'escenarios-financieros': renderEscenariosFinancieros,
     reportes: renderReportes,
     proyectos: renderProyectos,
-    usuarios: renderUsuarios
+    usuarios: renderUsuarios,
+    ledger: renderLedger
   };
 
   const VIEW_TITLES = {
@@ -2256,7 +2516,8 @@ const App = (() => {
     'escenarios-financieros': 'Escenarios Financieros',
     reportes: 'Reportes e Indicadores',
     proyectos: 'Gestión de Proyectos',
-    usuarios: 'Gestión de Usuarios'
+    usuarios: 'Gestión de Usuarios',
+    ledger: 'Libro de Inversiones'
   };
 
   function destroyCharts() {
@@ -2930,7 +3191,9 @@ const App = (() => {
     // Roles y proyectos
     switchProject, createProject, deleteProject,
     // Gestión de usuarios
-    createUser, deleteUser, updateUserRole
+    createUser, deleteUser, updateUserRole,
+    // Ledger
+    addInversionista, deleteInversionista, addPago, deletePago
   };
 
 })();
