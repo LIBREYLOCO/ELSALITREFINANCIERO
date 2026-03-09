@@ -1205,7 +1205,17 @@ const App = (() => {
         const cr1 = (utilPorTicket1 / precio) * 100;
         const cr5 = (utilPorTicket5 / precio) * 100;
         const crN = (utilPorTicketN / precio) * 100;
-        const recup = cr1 > 0 ? (100 / cr1).toFixed(1) : '∞';
+        let recup = '10+ años';
+        let runningSumRecup = 0;
+        for (let yr = 0; yr < anios; yr++) {
+          const u = yearlyData[yr].utilidadPorTicket;
+          if (runningSumRecup + u >= precio) {
+            const fraction = (precio - runningSumRecup) / u;
+            recup = (yr + fraction).toFixed(1) + ' años';
+            break;
+          }
+          runningSumRecup += u;
+        }
         html += `<tr style="border-bottom:1px solid #f5f5f5;">
           <td style="padding:12px 16px; font-weight:600; color:var(--navy);">${ticket.nombre}</td>
           <td style="padding:12px 16px; text-align:right;">${M(precio)}</td>
