@@ -109,6 +109,72 @@ const App = (() => {
   let isPDFMode = false; // Flag para condensar tablas en exportación PDF
   let charts = [];
 
+  function updateCharts() {
+    // Destruir instancias previas para evitar superposiciones
+    charts.forEach(c => c.destroy());
+    charts = [];
+
+    const ctxInv = document.getElementById('chart-inventario');
+    const ctxIng = document.getElementById('chart-ingresos');
+
+    if (ctxInv) {
+      const tVendidosLedger = (state.inversionistas || []).reduce((s, i) => s + (Number(i.tickets) || 0), 0);
+      const maxTickets = Number(state.variables.numTicketsMax) || 0;
+      const tAportados = (state.tickets.filter(t => t.esAportado).reduce((s, t) => s + (Number(t.cantidad) || 0), 0)) + Math.floor(maxTickets * (state.variables.pctTicketsModelo / 100));
+      const tDisponibles = maxTickets - tVendidosLedger - tAportados;
+
+      charts.push(new Chart(ctxInv, {
+        type: 'doughnut',
+        data: {
+          labels: ['Vendidos', 'Aportados', 'Disponibles'],
+          datasets: [{
+            data: [tVendidosLedger, tAportados, tDisponibles],
+            backgroundColor: ['#3A1C15', '#C5A059', '#E5DED5'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text') } } }
+        }
+      }));
+    }
+
+    if (ctxIng) {
+      const v = state.variables;
+      const m2Comercial = Number(v.m2ComercialPB) || 0;
+      const m2Hotel1 = Number(v.m2HotelNivel1) || 0;
+      const m2Hotel2 = Number(v.m2HotelNivel2) || 0;
+      const rComercial = m2Comercial * (Number(v.rentaM2Comercial) || 0);
+      const rHotel1 = m2Hotel1 * (Number(v.rentaM2HotelNivel1) || 0);
+      const rHotel2 = m2Hotel2 * (Number(v.rentaM2HotelNivel2) || 0);
+      const rEstac = (Number(v.cochesDiarios) || 350) * (Number(v.precioPorCoche) || 50) * 30;
+
+      charts.push(new Chart(ctxIng, {
+        type: 'bar',
+        data: {
+          labels: ['Comercial', 'Hotel N1', 'Hotel N2', 'Estac.'],
+          datasets: [{
+            label: 'Ingreso Mensual',
+            data: [rComercial, rHotel1, rHotel2, rEstac],
+            backgroundColor: '#C5A059',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, grid: { color: getComputedStyle(document.body).getPropertyValue('--border') }, ticks: { color: getComputedStyle(document.body).getPropertyValue('--text') } },
+            x: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--text') } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      }));
+    }
+  }
+
   // Formateadores Globales
   const MXN = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const M = (val) => MXN.format(val || 0);
@@ -129,6 +195,12 @@ const App = (() => {
   }
 
   async function loadState() {
+    // Aplicar tema guardado antes de cargar datos
+    const savedTheme = localStorage.getItem('lyl_theme') || 'light';
+    if (savedTheme === 'dark') {
+      document.body.classList.add('dark-mode');
+    }
+
     try {
       const res = await fetch('/api/state');
       const data = await res.json();
@@ -259,11 +331,14 @@ const App = (() => {
     const pctCapitalNeto = meta > 0 ? (capitalNeto / meta) * 100 : 0;
 
     const kpiCard = (label, valor, sub, color, borderColor, tooltip) =>
-      `<div class="card ${color.includes('status') ? color : ''}" style="padding:20px; border-top:3px solid ${borderColor}; transition: transform 0.3s ease;" ${tooltip ? `data-tooltip="${tooltip}"` : ''}>
+      `<div class="card animate-scale ${color.includes('status') ? color : ''}" style="padding:20px; border-top:3px solid ${borderColor}; transition: transform 0.3s ease;" ${tooltip ? `data-tooltip="${tooltip}"` : ''}>
         <div class="kpi-label">${label} ${tooltip ? '<span class="info-icon">i</span>' : ''}</div>
         <div style="font-size:22px; font-weight:700; color:${color.startsWith('status') ? 'inherit' : color}; line-height:1.2;">${valor}</div>
         <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">${sub}</div>
       </div>`;
+
+    // Inyectar llamada a updateCharts justo después de que el DOM se actualice
+    setTimeout(updateCharts, 50);
 
     return `
     <div class="section-header">
@@ -395,6 +470,25 @@ const App = (() => {
             </span>
             <span style="font-size:13px; font-weight:${i === 4 ? '700' : '600'}; color:${row.color};">${M(Math.abs(row.val))}</span>
           </div>`).join('')}
+      </div>
+    </div>
+
+      </div>
+    </div>
+
+    <!-- Gráficos Interactivos -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+      <div class="card" style="padding:24px; height:350px;">
+        <div style="font-size:13px; font-weight:600; color:var(--navy); margin-bottom:16px;">Distribución de Inventario (Tickets)</div>
+        <div style="flex:1; position:relative; min-height:0;">
+          <canvas id="chart-inventario"></canvas>
+        </div>
+      </div>
+      <div class="card" style="padding:24px; height:350px;">
+        <div style="font-size:13px; font-weight:600; color:var(--navy); margin-bottom:16px;">Ingresos Operativos por Fuente</div>
+        <div style="flex:1; position:relative; min-height:0;">
+          <canvas id="chart-ingresos"></canvas>
+        </div>
       </div>
     </div>
 
@@ -3240,6 +3334,10 @@ const App = (() => {
     resetToFactory, resetState: resetToFactory,
     switchReportTab, switchParamTab, switchProyeccionTab,
     updateOcupacion, logout,
+    toggleTheme: () => {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('lyl_theme', isDark ? 'dark' : 'light');
+    },
     // Roles y proyectos
     switchProject, createProject, deleteProject,
     // Gestión de usuarios

@@ -83,6 +83,30 @@
   --purple-dim: rgba(123, 63, 158, .08);
   --purple-border: rgba(123, 63, 158, .25);
   --oxford: var(--navy);
+
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Dark Mode ── */
+body.dark-mode {
+  --bg: #121212;
+  --surface: #1E1E1E;
+  --surface2: #252525;
+  --surface3: #2D2D2D;
+  --border: #333333;
+  --border-md: rgba(255, 255, 255, .1);
+  --text: #E0E0E0;
+  --text-secondary: #B0B0B0;
+  --text-muted: #888888;
+  --text-faint: #666666;
+  --glass-bg: rgba(30, 30, 30, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --shadow: 0 4px 20px rgba(0, 0, 0, .4);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, .6);
+
+  --navy: #D9C070;
+  /* In dark mode, use gold for primary "navy" accents for contrast */
+  --navy-mid: #E8D090;
 }
 
 /* ── Reset ── */
@@ -106,6 +130,7 @@ body {
   background: var(--bg);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 input,
@@ -163,6 +188,39 @@ button {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(58, 28, 21, .30);
+}
+
+/* ── Animaciones ── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-fade {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.animate-scale {
+  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 /* ── App Layout ── */
@@ -497,7 +555,35 @@ button {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text-muted);
+  background: var(--surface2);
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+}
+
+.theme-toggle:hover {
+  background: var(--navy-dim);
+  color: var(--navy);
+  transform: rotate(15deg);
+}
+
+body.dark-mode .sun-icon {
+  display: none;
+}
+
+body.dark-mode .moon-icon {
+  display: block;
+  color: var(--gold);
 }
 
 .sidebar-toggle {
@@ -583,7 +669,8 @@ button {
   padding: 22px 26px;
   margin-bottom: 18px;
   box-shadow: var(--shadow);
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+  animation: fadeIn 0.5s ease backwards;
 }
 
 .card:hover {
@@ -1610,6 +1697,7 @@ tbody td:first-child {
   background: #e74c3c;
   color: #fff;
 }
+
 /* ── Tooltip Engine ── */
 [data-tooltip] {
   position: relative;
@@ -1633,8 +1721,8 @@ tbody td:first-child {
   white-space: pre-wrap;
   width: 200px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   opacity: 0;
   pointer-events: none;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1659,13 +1747,35 @@ tbody td:first-child {
   letter-spacing: 0.5px;
 }
 
-.status-high { color: var(--status-high); background: var(--status-high-bg); }
-.status-mid { color: var(--status-mid); background: var(--status-mid-bg); }
-.status-low { color: var(--status-low); background: var(--status-low-bg); }
+.status-high {
+  color: var(--status-high);
+  background: var(--status-high-bg);
+}
 
-.value-high { color: var(--status-high) !important; font-weight: 600; }
-.value-mid { color: var(--status-mid) !important; font-weight: 600; }
-.value-low { color: var(--status-low) !important; font-weight: 600; }
+.status-mid {
+  color: var(--status-mid);
+  background: var(--status-mid-bg);
+}
+
+.status-low {
+  color: var(--status-low);
+  background: var(--status-low-bg);
+}
+
+.value-high {
+  color: var(--status-high) !important;
+  font-weight: 600;
+}
+
+.value-mid {
+  color: var(--status-mid) !important;
+  font-weight: 600;
+}
+
+.value-low {
+  color: var(--status-low) !important;
+  font-weight: 600;
+}
 
 .info-icon {
   display: inline-flex;
