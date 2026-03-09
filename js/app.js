@@ -3065,17 +3065,32 @@ const App = (() => {
     document.body.classList.add('pdf-export-active');
     isPDFMode = true;
     navigate(currentView);
-    await new Promise(r => setTimeout(r, 400)); // Esperar re-render
+    await new Promise(r => setTimeout(r, 600)); // Esperar re-render y charts
 
-    const opt = {
-      margin: [8, 7, 8, 7],
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, backgroundColor: '#ffffff' },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
-    };
+    const A4_RATIO = 297 / 210;
+    const capW = element.scrollWidth;
+    const capH = Math.min(element.scrollHeight, Math.round(capW / A4_RATIO));
+    const canvas = await html2canvas(element, {
+      scale: 1.5,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      foreignObjectRendering: false,
+      scrollX: 0,
+      scrollY: 0,
+      width: capW,
+      height: capH,
+      windowWidth: capW,
+      windowHeight: capH
+    });
+
+    const { jsPDF } = window.jspdf;
+    const PAGE_W = 297, PAGE_H = 210, MARGIN = 7;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'landscape' });
+    _addCanvasToPage(doc, canvas, PAGE_W, PAGE_H, MARGIN, currentView.toUpperCase(), 1, 1);
     const proyecto = (state.variables && state.variables.proyecto) ? state.variables.proyecto.replace(/\s+/g, '_') : 'vista';
-    opt.filename = `${currentView}-${proyecto}.pdf`;
-    await html2pdf().set(opt).from(element).save();
+    doc.save(`${currentView}-${proyecto}.pdf`);
   } catch (err) {
     alert('Error al generar el PDF. Intenta de nuevo.');
   } finally {
@@ -3241,11 +3256,12 @@ const App = (() => {
   });
 
   // ── Captura de cada vista navegando en el DOM real ───────────
+  let wasDark = false;
   try {
     // FORZAR TEMA CLARO para impresión
-    const wasDark = document.body.classList.contains('dark-mode');
+    wasDark = document.body.classList.contains('dark-mode');
     if (wasDark) document.body.classList.remove('dark-mode');
-    document.body.classList.add('pdf-export-active'); // Add this line for full report export
+    document.body.classList.add('pdf-export-active');
 
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
