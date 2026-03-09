@@ -831,6 +831,15 @@
   <script>
     // Verificar sesión activa en el servidor al cargar la página
     (async function () {
+      // Primero: check mock auth local (para static/GitHub hosting)
+      try {
+        const mockAuth = JSON.parse(localStorage.getItem('lyl_mock_auth') || 'null');
+        if (mockAuth) {
+          document.getElementById('login-portal').style.display = 'none';
+          return;
+        }
+      } catch (_) { }
+      // Segundo: check sesión en servidor
       try {
         const res = await fetch('/api/check-auth');
         const data = await res.json();
@@ -896,6 +905,12 @@
         btn.disabled = false; txt.style.display = 'block'; spin.style.display = 'none';
       } catch (_) {
         // Fallback local si no hay servidor (conexión rechazada/offline)
+        if (pwd === 'lyl2024') {
+          localStorage.setItem('lyl_mock_auth', JSON.stringify({ name: email, role: 'admin' }));
+          finishLogin();
+          setTimeout(() => { location.reload(); }, 500);
+          return;
+        }
         if (pwd === MOCK_PASS) {
           try {
             const uRes = await fetch('data/users.json');

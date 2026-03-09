@@ -3034,6 +3034,7 @@ const App = (() => {
       portal.offsetHeight;
       portal.style.animation = '';
     }
+    localStorage.removeItem('lyl_mock_auth');
     // Resetear estado del botón/spinner que quedó del login anterior
     const btn = document.getElementById('lp-btn');
     const txt = document.getElementById('lp-btn-text');
