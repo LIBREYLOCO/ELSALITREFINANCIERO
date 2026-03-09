@@ -98,6 +98,7 @@ const App = (() => {
 
   let state = {};
   let currentView = 'dashboard';
+  let isPDFMode = false; // Flag para condensar tablas en exportación PDF
   let charts = [];
 
   // Formateadores Globales
@@ -1069,17 +1070,17 @@ const App = (() => {
       let ingresoAnualRentasActual = ingresoRentasMensualBase * 12;
       let ingresoAnualEstacActual = ingresoEstacionamientoMensual * 12;
 
-      html += `<div style="overflow-x:auto;"><table style="width:100%; text-align:right; border-collapse:collapse; font-size:13px; min-width:1100px;">
+      html += `<div style="overflow-x:auto;"><table style="width:100%; text-align:right; border-collapse:collapse; font-size:${isPDFMode ? '10px' : '13px'}; min-width:${isPDFMode ? '900px' : '1100px'};">
         <thead>
           <tr style="border-bottom:2px solid #eee; background:#f9fbfd; color:var(--navy);">
-            <th style="padding:12px 16px; font-weight:600; text-align:left;">Año Operativo</th>
-            <th style="padding:12px 16px; font-weight:600;">Ocup.<br>Renta</th>
-            <th style="padding:12px 16px; font-weight:600;">Ingreso<br>Rentas</th>
-            <th style="padding:12px 16px; font-weight:600;">Ocup.<br>Estac.</th>
-            <th style="padding:12px 16px; font-weight:600;">Ingreso<br>Estacionamiento</th>
-            <th style="padding:12px 16px; font-weight:600;">Costo Admin.<br>(${(adminPct * 100).toFixed(1)}%)</th>
-            <th style="padding:12px 16px; font-weight:600;">Utilidad Neta<br>(Pool Total)</th>
-            <th style="padding:12px 16px; font-weight:600;">Utilidad Neta<br>/ Ticket</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600; text-align:left;">Año Operativo</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Ocup.<br>Renta</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Ingreso<br>Rentas</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Ocup.<br>Estac.</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Ingreso<br>Estacionamiento</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Costo Admin.<br>(${(adminPct * 100).toFixed(1)}%)</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Utilidad Neta<br>(Pool Total)</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Utilidad Neta<br>/ Ticket</th>
             ${headersHTML}
           </tr>
         </thead>
@@ -1889,16 +1890,16 @@ const App = (() => {
 
     html += `
     <div class="card" style="padding:0; overflow-x:auto;">
-      <table style="width:100%; text-align:right; border-collapse:collapse; font-size:13px; min-width:1150px;">
+      <table style="width:100%; text-align:right; border-collapse:collapse; font-size:${isPDFMode ? '10px' : '12px'}; min-width:${isPDFMode ? '900px' : '1150px'};">
         <thead>
           <tr style="border-bottom:2px solid #eee; background:#f9fbfd; color:var(--navy);">
-            <th style="padding:12px 16px; font-weight:600; text-align:left;">Año de Operación</th>
-            <th style="padding:12px 16px; font-weight:600;">Ocup.<br>Renta</th>
-            <th style="padding:12px 16px; font-weight:600;">Ocup.<br>Estac.</th>
-            <th style="padding:12px 16px; font-weight:600;">Ingreso Ajustado Rentas (Bruto)</th>
-            <th style="padding:12px 16px; font-weight:600;">Ingreso Ajustado<br>Estacionamiento</th>
-            <th style="padding:12px 16px; font-weight:600;">Costo Admin. (${(adminPct * 100).toFixed(1)}%)</th>
-            <th style="padding:12px 16px; font-weight:600;">Utilidad Neta Ponderada</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600; text-align:left;">Año de Operación</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Ocup.<br>Renta</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Ocup.<br>Estac.</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Ingreso Ajustado Rentas (Bruto)</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Ingreso Ajustado<br>Estacionamiento</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Costo Admin. (${(adminPct * 100).toFixed(1)}%)</th>
+            <th style="padding:${isPDFMode ? '8px 10px' : '12px 16px'}; font-weight:600;">Utilidad Neta Ponderada</th>
             ${headersHTML}
           </tr>
         </thead>
@@ -2269,6 +2270,10 @@ const App = (() => {
     if (btn) { btn.textContent = '⏳ Generando...'; btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; }
 
     try {
+      // Activar modo condensado para PDF
+      isPDFMode = true;
+      navigate(currentView); // Forzar re-render con modo PDF
+
       // Captura TODO el contenido (filas, columnas ocultas por scroll)
       const canvas = await _captureFullElement(element, 2, '#f4f7fa');
 
@@ -2283,6 +2288,8 @@ const App = (() => {
     } catch (err) {
       alert('Error al generar el PDF. Intenta de nuevo.');
     } finally {
+      isPDFMode = false;
+      navigate(currentView); // Restaurar vista normal
       if (btn) { btn.textContent = 'Vista actual'; btn.style.opacity = ''; btn.style.pointerEvents = ''; }
     }
   }
@@ -2398,9 +2405,11 @@ const App = (() => {
         // Aplicar pestaña si corresponde
         if (page.set) Object.assign(state.variables, page.set);
 
+        // Activar modo condensado para PDF en cada página
+        isPDFMode = true;
         // Navegar a la vista real (CSS, fuentes, charts: todo renderizado)
         navigate(page.view);
-        // Esperar a que el DOM pinte: más tiempo para vistas con Chart.js
+        // Esperar a que el DOM pinte
         const waitMs = (page.view === 'reportes' || page.view === 'proyeccion' || page.view === 'dashboard') ? 600 : 300;
         await new Promise(r => setTimeout(r, waitMs));
 
@@ -2424,6 +2433,7 @@ const App = (() => {
       alert('Error al generar la presentación. Abre la consola para más detalles.');
     } finally {
       // Restaurar vista y pestañas originales
+      isPDFMode = false;
       Object.assign(state.variables, savedTabs);
       navigate(savedView);
       document.body.removeChild(overlay);
