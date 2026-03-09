@@ -227,44 +227,50 @@ button {
 /* Reset ALL CSS variables to light-mode values so html2canvas captures
    readable colors regardless of whether dark mode was active */
 body.pdf-export-active {
-  --bg: #FAFAFA;
+  --bg: #FFFFFF;
   --surface: #FFFFFF;
   --surface2: #F4F6F8;
   --surface3: #EFF2F5;
-  --border: #E5DED5;
-  --border-md: rgba(58, 28, 21, .12);
-  --text: #2D140F;
-  --text-secondary: #4A251E;
-  --text-muted: #5C2D24;
-  --text-faint: #8B5E54;
-  --navy: #3A1C15;
-  --navy-mid: #4A261D;
-  --navy-dim: rgba(58, 28, 21, .06);
-  --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: rgba(255, 255, 255, 0.4);
-  --shadow: 0 2px 16px rgba(26, 43, 72, .08);
-  --shadow-md: 0 4px 28px rgba(26, 43, 72, .12);
+  --border: #D0C4B8;
+  --border-md: rgba(58, 28, 21, .18);
+  --text: #111111;
+  --text-secondary: #222222;
+  --text-muted: #333333;
+  --text-faint: #555555;
+  --navy: #1E293B;
+  --navy-mid: #2D3748;
+  --navy-dim: rgba(30, 41, 59, .08);
+  --glass-bg: #FFFFFF;
+  --glass-border: rgba(0,0,0,0.1);
+  --shadow: none;
+  --shadow-md: none;
 }
 
-body.pdf-export-active #content-body {
+body.pdf-export-active #content-body,
+body.pdf-export-active .card,
+body.pdf-export-active .section-header,
+body.pdf-export-active .section-title,
+body.pdf-export-active .section-sub {
   background: #ffffff !important;
-  color: #2D140F !important;
+  color: #111111 !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
 }
 
 body.pdf-export-active .card {
-  background: #ffffff !important;
-  border: 1px solid #E5DED5 !important;
-  box-shadow: none !important;
-  color: #2D140F !important;
+  border: 1px solid #D0C4B8 !important;
 }
 
 body.pdf-export-active .kpi-label,
+body.pdf-export-active .kpi-value,
 body.pdf-export-active p,
 body.pdf-export-active span,
 body.pdf-export-active td,
 body.pdf-export-active th,
-body.pdf-export-active div {
-  color: #2D140F !important;
+body.pdf-export-active label,
+body.pdf-export-active small {
+  color: #111111 !important;
+  opacity: 1 !important;
 }
 
 /* ── App Layout ── */

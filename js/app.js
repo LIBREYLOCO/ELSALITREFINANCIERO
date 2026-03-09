@@ -3071,7 +3071,7 @@ const App = (() => {
     const capW = element.scrollWidth;
     const capH = Math.min(element.scrollHeight, Math.round(capW / A4_RATIO));
     const canvas = await html2canvas(element, {
-      scale: 1.5,
+      scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
@@ -3290,7 +3290,7 @@ const App = (() => {
       const capW = el.scrollWidth;
       const capH = Math.min(el.scrollHeight, Math.round(capW / A4_RATIO));
       const canvas = await html2canvas(el, {
-        scale: 1.5,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
