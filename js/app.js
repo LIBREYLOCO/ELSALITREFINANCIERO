@@ -10,7 +10,7 @@ const App = (() => {
   // ── ESTADO INICIAL ──
   const DEFAULTS = {
     variables: {
-      proyecto: 'PUEBLO MÄGICO "EL SALITRE"',
+      proyecto: 'PUEBLO MÁGICO EL SALITRE',
       capitalRequerido: 215000000,
       terreno: 40000,
       numTicketsMax: 400,
@@ -1704,7 +1704,7 @@ const App = (() => {
 
       <div class="card" style="padding:24px; border-top:3px solid #2ecc71;">
         <h3 style="font-size:14px; color:var(--navy); margin-bottom:16px; font-weight:500">Estimador de Costo Mercado Atual</h3>
-        <label style="font-size:11px; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:6px">Precio Comercial actual en Zona (Querétaro)</label>
+        <label style="font-size:11px; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:6px">Precio Comercial actual en Zona</label>
         <input type="text" class="form-input" style="width:100%; border:1px solid #ddd; padding:8px; border-radius:4px; font-size:16px; font-weight:600; color:#2ecc71;" 
           value="${M(v.precioMercadoActualM2)}" data-key="precioMercadoActualM2" data-nested="variables">
         
