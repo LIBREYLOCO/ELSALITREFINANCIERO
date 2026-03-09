@@ -185,6 +185,12 @@ const App = (() => {
     const ticketsTotales = ticketsVendidosConf + ticketsModelo;
     const pclMeta = meta > 0 ? (entradas / meta) * 100 : 0;
 
+    // --- NUEVOS INDICADORES DE TICKETS (INVENTARIO REAL) ---
+    const invs = state.inversionistas || [];
+    const tVendidosLedger = invs.reduce((s, i) => s + (Number(i.tickets) || 0), 0);
+    const tAportados = state.tickets.filter(t => t.esAportado).reduce((s, t) => s + (Number(t.cantidad) || 0), 0);
+    const tDisponibles = maxTickets - tVendidosLedger - tAportados;
+
     // M²
     const m2Comercial = Number(v.m2ComercialPB) || 0;
     const m2Hotel1 = Number(v.m2HotelNivel1) || 0;
@@ -239,6 +245,14 @@ const App = (() => {
       ${kpiCard('Entradas Proyectadas', M(entradas), `<span style="font-weight:700; color:${pclMeta >= 100 ? '#2ecc71' : '#C5A059'};">${pclMeta.toFixed(1)}%</span> de la meta cubierto`, '#2ecc71', '#2ecc71', 'Capital total comprometido por los inversionistas a la fecha.')}
       ${kpiCard('Egresos de Levantamiento', M(egresosTotales), `Fijos ${meses} meses + comisiones + acop.`, '#E8A090', '#E8A090', 'Gastos operativos, comerciales y de preventa.')}
       ${kpiCard('Capital Neto a Obra', M(capitalNeto), `${pctCapitalNeto.toFixed(1)}% del objetivo disponible`, capitalNeto >= meta * 0.8 ? 'var(--navy)' : '#C5A059', 'var(--navy)', 'Capital remanente para construcción después de egresos.')}
+    </div>
+
+    <!-- Indicadores de Inventario de Tickets -->
+    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:20px;">
+      ${kpiCard('Tickets Vendidos', tVendidosLedger, `Venta real vía Ledger`, 'var(--navy)', 'var(--navy)', 'Suma de tickets asignados a inversionistas reales.')}
+      ${kpiCard('Tickets Disponibles', tDisponibles, `${((tDisponibles / maxTickets) * 100).toFixed(1)}% del inventario`, tDisponibles > 50 ? 'status-high' : 'status-mid', '#C5A059', 'Tickets aún no asignados ni vendidos.')}
+      ${kpiCard('Tickets Aportados', tAportados, `Reserva / Capital Tierra`, '#95a5a6', '#95a5a6', 'Tickets reservados para aportaciones fijas o socios fundadores.')}
+      ${kpiCard('Total de Tickets', maxTickets, `Emisión total autorizada`, '#7f8c8d', '#C5A059', 'Capacidad nominal máxima del proyecto.')}
     </div>
 
     <!-- KPIs de Rendimiento -->
