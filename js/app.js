@@ -3057,8 +3057,10 @@ const App = (() => {
     const btn = document.querySelector('[onclick="App.exportCurrentViewToPDF()"]');
     if (btn) { btn.textContent = '⏳ Generando...'; btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; }
 
+    let wasDark = false;
+    try {
     // Activar modo condensado para PDF y FORZAR TEMA CLARO para impresión
-    const wasDark = document.body.classList.contains('dark-mode');
+    wasDark = document.body.classList.contains('dark-mode');
     if (wasDark) document.body.classList.remove('dark-mode');
     document.body.classList.add('pdf-export-active');
 
