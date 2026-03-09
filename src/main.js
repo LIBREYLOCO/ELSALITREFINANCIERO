@@ -48,11 +48,18 @@ const App = (() => {
 
     function syncRoleUI() {
         const badge = document.getElementById('user-role-badge');
-        if (!badge) return;
-
+        const layout = document.getElementById('app-layout');
         const role = (localStorage.getItem('lyl_mock_auth') ? JSON.parse(localStorage.getItem('lyl_mock_auth')).role : 'viewer') || 'viewer';
-        badge.textContent = role === 'admin' ? 'ADMINISTRADOR' : 'LECTURA';
-        badge.style.background = role === 'admin' ? '#2ecc71' : '#888';
+
+        if (badge) {
+            badge.textContent = role === 'admin' ? 'ADMINISTRADOR' : 'LECTURA';
+            badge.style.background = role === 'admin' ? '#2ecc71' : '#888';
+        }
+
+        if (layout) {
+            layout.classList.toggle('role-viewer', role === 'viewer');
+            layout.classList.toggle('role-admin', role === 'admin');
+        }
     }
 
     /**

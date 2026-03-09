@@ -68,8 +68,8 @@ export const DEFAULTS = {
 };
 
 export let state = JSON.parse(JSON.stringify(DEFAULTS));
+state.currentRole = 'viewer';
 export let scenariosDb = [];
-export let currentRole = 'viewer';
 
 export function setState(newState) {
     state = newState;
@@ -80,5 +80,5 @@ export function setScenarios(scenarios) {
 }
 
 export function setRole(role) {
-    currentRole = role;
+    state.currentRole = role;
 }
