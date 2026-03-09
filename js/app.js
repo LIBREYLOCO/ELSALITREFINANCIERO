@@ -3006,10 +3006,11 @@ const App = (() => {
     const printW = PAGE_W - MARGIN * 2;
     const printH = PAGE_H - MARGIN * 3; // Menos espacio para header/footer
     const ar = canvas.width / canvas.height;
-    let imgW = printW, imgH = imgW / ar;
-    if (imgH > printH) { imgH = printH; imgW = imgH * ar; }
-    const x = MARGIN + (printW - imgW) / 2;
-    const y = MARGIN + 6 + (printH - imgH) / 2; // Desplazado abajo por el header
+    // Llenar siempre el ancho completo; si el contenido es muy alto (retrato) se recorta el fondo
+    const imgW = printW;
+    const imgH = Math.min(imgW / ar, printH);
+    const x = MARGIN;
+    const y = MARGIN + 6; // Desplazado abajo por el header
 
     // 1. Watermark (Fondo sutil)
     doc.saveGraphicsState();
@@ -3067,7 +3068,7 @@ const App = (() => {
     isPDFMode = true;
     navigate(currentView); // Forzar re-render con modo PDF
 
-    // Captura el área visible (proporción landscape para A4)
+    // Captura el contenido completo (scroll height)
     const canvas = await html2canvas(element, {
       scale: 2,
       useCORS: true,
@@ -3077,8 +3078,10 @@ const App = (() => {
       foreignObjectRendering: false,
       scrollX: 0,
       scrollY: 0,
-      height: element.clientHeight,
-      windowHeight: element.clientHeight
+      width: element.scrollWidth,
+      height: element.scrollHeight,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight
     });
 
     // Encaja en UNA SOLA hoja carta apaisada
@@ -3282,7 +3285,7 @@ const App = (() => {
       const el = document.getElementById('content-body');
       if (!el) continue;
 
-      // Captura el área visible de la vista
+      // Captura el contenido completo de la vista (scroll height)
       const canvas = await html2canvas(el, {
         scale: 2,
         useCORS: true,
@@ -3292,8 +3295,10 @@ const App = (() => {
         foreignObjectRendering: false,
         scrollX: 0,
         scrollY: 0,
-        height: el.clientHeight,
-        windowHeight: el.clientHeight
+        width: el.scrollWidth,
+        height: el.scrollHeight,
+        windowWidth: el.scrollWidth,
+        windowHeight: el.scrollHeight
       });
 
       doc.addPage();
