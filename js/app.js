@@ -1319,8 +1319,9 @@ const App = (() => {
         curRentas *= (1 + inflacion);
         curEstac *= (1 + inflacion);
       }
-      const pctRent = (v.ocupacionRentas && v.ocupacionRentas[yr] !== undefined) ? v.ocupacionRentas[yr] / 100 : 1;
-      const pctEstac = (v.ocupacionEstacionamiento && v.ocupacionEstacionamiento[yr] !== undefined) ? v.ocupacionEstacionamiento[yr] / 100 : 1;
+      // Corrida Financiera: ocupación siempre al 100% (escenarios variables solo en Escenarios Financieros)
+      const pctRent = 1;
+      const pctEstac = 1;
 
       const ingresoNetoRentas = curRentas * pctRent;
       const ingresoNetoEstac = curEstac * pctEstac;
