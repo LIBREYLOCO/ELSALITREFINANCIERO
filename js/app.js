@@ -520,16 +520,17 @@ const App = (() => {
         <div style="font-size:13px; font-weight:600; color:var(--navy); margin-bottom:16px;">Destino del Capital Captado</div>
         ${[
         { label: 'Entradas Brutas', val: entradas, color: '#2ecc71', icon: '+' },
+        ...(terrenoValor > 0 ? [{ label: v.aportaTerreno ? 'Terreno (Aportación)' : 'Compra de Terreno', val: -terrenoValor, color: '#E8A090', icon: '–' }] : []),
         { label: `Nómina y Operativos (${meses} meses)`, val: -egresosFijos, color: '#E8A090', icon: '–' },
         { label: 'Comisiones de Venta', val: -comision, color: '#E8A090', icon: '–' },
         { label: 'Acoplamiento Preoperativo', val: -acop, color: '#E8A090', icon: '–' },
         { label: 'Capital Neto para Obra', val: capitalNeto, color: capitalNeto > 0 ? 'var(--navy)' : '#E8A090', icon: '=' }
-      ].map((row, i) => `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 0; ${i < 4 ? 'border-bottom:1px solid #f0f0f0;' : 'border-top:2px solid #eee; margin-top:4px; padding-top:12px;'}">
+      ].map((row, i, arr) => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 0; ${i < arr.length - 1 ? 'border-bottom:1px solid #f0f0f0;' : 'border-top:2px solid #eee; margin-top:4px; padding-top:12px;'}">
             <span style="font-size:12px; color:var(--text-muted);">
               <span style="font-size:14px; font-weight:700; color:${row.color}; margin-right:8px;">${row.icon}</span>${row.label}
             </span>
-            <span style="font-size:13px; font-weight:${i === 4 ? '700' : '600'}; color:${row.color};">${M(Math.abs(row.val))}</span>
+            <span style="font-size:13px; font-weight:${i === arr.length - 1 ? '700' : '600'}; color:${row.color};">${M(Math.abs(row.val))}</span>
           </div>`).join('')}
       </div>
     </div>
