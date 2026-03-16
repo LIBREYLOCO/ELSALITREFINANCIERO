@@ -33,7 +33,7 @@ const App = (() => {
       costoAdminRentasPct: 8.9,
       pctTicketsModelo: 10,
       costoM2Construccion: 18000,
-      precioMercadoActualM2: 45000,
+      precioMercadoActualM2: 48500,
       aportaTerreno: false,
       valorTerrenoAportado: 36000000,
       precioTicketTerreno: 599999,
@@ -585,7 +585,43 @@ const App = (() => {
         <span style="font-size:12px; color:var(--text-muted);">→ Anual:</span>
         <span style="font-size:20px; font-weight:700; color:#2ecc71;">${M(ingresoAnualTotal)}</span>
       </div>
-    </div>`;
+    </div>
+
+    <!-- Plusvalía Especulativa por Fase -->
+    ${(() => {
+      const precioMercado = Number(v.precioMercadoActualM2) || 48500;
+      const valorFraccion = m2PorTicket * precioMercado;
+      return `<div class="card" style="padding:24px; margin-top:20px; border-top:3px solid #2ecc71;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="font-size:13px; font-weight:600; color:var(--navy);">Proyección de Plusvalía Especulativa por Fase</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+              Equivalencia física: <strong>${m2PorTicket.toFixed(2)} m²/ticket</strong> ×
+              <strong>${M(precioMercado)}/m²</strong> = Valor comercial estimado <strong style="color:#2ecc71;">${M(valorFraccion)}</strong>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; color:var(--text-muted);">Precio/m² mercado actual:</span>
+            <input type="text" class="form-input" style="width:110px; border:1px solid #2ecc71; padding:5px 8px; border-radius:4px; font-size:14px; font-weight:700; color:#2ecc71; text-align:center;"
+              value="${M(v.precioMercadoActualM2)}" data-key="precioMercadoActualM2" data-nested="variables">
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px;">
+          ${state.tickets.map(t => {
+            const plusMon = valorFraccion - Number(t.precio);
+            const plusPct = Number(t.precio) > 0 ? ((valorFraccion / Number(t.precio)) - 1) * 100 : 0;
+            const pos = plusMon > 0;
+            return `<div style="background:#f9fbfd; border-radius:8px; padding:14px; text-align:center; border-bottom:3px solid ${pos ? '#2ecc71' : '#E8A090'}; ${t.esAportado ? 'opacity:0.75;' : ''}">
+              <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); margin-bottom:4px; line-height:1.3;">${t.nombre}</div>
+              <div style="font-size:12px; font-weight:600; color:var(--navy); margin-bottom:8px;">${M(t.precio)}</div>
+              <div style="font-size:22px; font-weight:700; color:${pos ? '#2ecc71' : '#E8A090'}; line-height:1;">${pos ? '+' : ''}${plusPct.toFixed(1)}%</div>
+              <div style="font-size:11px; color:${pos ? '#2ecc71' : '#E8A090'}; margin-top:4px;">${pos ? '+' : ''}${M(plusMon)}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    })()}
+`;
   }
 
   function renderParametros() {
@@ -949,7 +985,7 @@ const App = (() => {
       totalEstimado += subtotal;
 
       const valorM2 = precio > 0 && m2PorTicket > 0 ? (precio / m2PorTicket) : 0;
-      const valorMercado = Number(state.variables.precioMercadoActualM2) || 45000;
+      const valorMercado = Number(state.variables.precioMercadoActualM2) || 48500;
       const plusvaliaPct = (valorM2 > 0 && valorMercado > valorM2) ? ((valorMercado - valorM2) / valorM2) * 100 : 0;
       const capRate = precio > 0 ? ((rentaAnualPorTicket / precio) * 100) : 0;
 
@@ -1592,7 +1628,7 @@ const App = (() => {
       const precioBaseVentaPromedio = selTicket ? Number(selTicket.precio) : 450000;
       const m2RentablesTotal = (Number(v.m2ComercialPB) || 0) + (Number(v.m2HotelNivel1) || 0) + (Number(v.m2HotelNivel2) || 0);
       const eqFisica = (v.numTicketsMax > 0 && m2RentablesTotal > 0) ? (m2RentablesTotal / v.numTicketsMax) : 0;
-      const precioActualMercado = Number(v.precioMercadoActualM2) || 45000;
+      const precioActualMercado = Number(v.precioMercadoActualM2) || 48500;
       const valorEstimadoFinal = eqFisica * precioActualMercado;
 
       html += `
@@ -1751,7 +1787,7 @@ const App = (() => {
 
       const m2RentablesTotal = (Number(v.m2ComercialPB) || 0) + (Number(v.m2HotelNivel1) || 0) + (Number(v.m2HotelNivel2) || 0);
       const eqFisica = (v.numTicketsMax > 0 && m2RentablesTotal > 0) ? (m2RentablesTotal / v.numTicketsMax) : 0;
-      const precioActualMercado = Number(v.precioMercadoActualM2) || 45000;
+      const precioActualMercado = Number(v.precioMercadoActualM2) || 48500;
       const valorEstimadoFinal = eqFisica * precioActualMercado;
 
       const diff = valorEstimadoFinal - precioBaseVentaPromedio;
@@ -1958,7 +1994,7 @@ const App = (() => {
     const _selIdxPv = Math.min(Number(v.selectedPlusvaliaTicketIdx) || 0, state.tickets.length - 1);
     const _selTicketPv = state.tickets[_selIdxPv] || state.tickets[0];
     const precioBaseVentaPromedio = _selTicketPv ? Number(_selTicketPv.precio) : 450000;
-    const precioActualMercado = Number(v.precioMercadoActualM2) || 45000;
+    const precioActualMercado = Number(v.precioMercadoActualM2) || 48500;
 
     // Valor en mercado = (EQ Fisica m2) * Precio Mercado
     const valorEstimadoFinal = eqFisica * precioActualMercado;
