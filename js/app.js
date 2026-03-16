@@ -43,12 +43,12 @@ const App = (() => {
       ocupacionEstacionamiento: [60, 75, 90, ...Array(17).fill(100)]
     },
     tickets: [
-      { id: 1, cantidad: 50, precio: 499999, nombre: "Fase Semilla", esAportado: false },
-      { id: 2, cantidad: 50, precio: 549999, nombre: "Preventa Privada", esAportado: false },
-      { id: 3, cantidad: 75, precio: 599999, nombre: "Oferta Primaria", esAportado: false },
-      { id: 4, cantidad: 75, precio: 649999, nombre: "Oferta Secundaria", esAportado: false },
-      { id: 5, cantidad: 50, precio: 719999, nombre: "Cierre de Emisión", esAportado: false },
-      { id: 6, cantidad: 60, precio: 599000, nombre: "Capital Tierra", esAportado: true, esTerrenoFijo: true }
+      { id: 1, cantidad: 50, precio: 549000, nombre: "Fase Semilla", esAportado: false },
+      { id: 2, cantidad: 50, precio: 649999, nombre: "Preventa Privada", esAportado: false },
+      { id: 3, cantidad: 75, precio: 699999, nombre: "Oferta Primaria", esAportado: false },
+      { id: 4, cantidad: 75, precio: 749999, nombre: "Oferta Secundaria", esAportado: false },
+      { id: 5, cantidad: 50, precio: 799999, nombre: "Cierre de Emisión", esAportado: false },
+      { id: 6, cantidad: 60, precio: 599999, nombre: "Capital Tierra", esAportado: true, esTerrenoFijo: true }
     ],
     egresos: {
       nominaAdmin: 80000,
