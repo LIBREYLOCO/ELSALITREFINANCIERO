@@ -64,7 +64,7 @@ const App = (() => {
       acopFotos: 30000,
       acopMedia: 120000,
       comisionVentasPct: 8,  // Porcentaje sobre ventas
-      mesesLevantamiento: 24 // 12, 16, 18, 24
+      mesesLevantamiento: 18 // 12, 16, 18, 24
     },
     showroomItems: [
       { nombre: 'Maqueta del Proyecto', cantidad: 1, costo: 150000 },
