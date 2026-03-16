@@ -81,10 +81,8 @@ const App = (() => {
       { nombre: 'Menaje y Detalles', cantidad: 1, costo: 18000 }
     ],
     obraItems: [
-      { nombre: '', cantidad: 1, costo: 0 },
-      { nombre: '', cantidad: 1, costo: 0 },
-      { nombre: '', cantidad: 1, costo: 0 },
-      { nombre: '', cantidad: 1, costo: 0 },
+      { nombre: 'Construcción de Obra', cantidad: 9000, costo: 18000 },
+      { nombre: 'Obra Exteriores', cantidad: 2703, costo: 3500 },
       { nombre: '', cantidad: 1, costo: 0 },
       { nombre: '', cantidad: 1, costo: 0 },
       { nombre: '', cantidad: 1, costo: 0 },
@@ -1825,8 +1823,6 @@ const App = (() => {
     const m2SuperficieRentadaEstacionamiento = Number(v.m2Estacionamiento) || 0;
     const m2TotalConstruir = m2RentablesTotal;
 
-    const costoM2 = Number(v.costoM2Construccion) || 0;
-    const totalObra = m2TotalConstruir * costoM2;
     const terreno = v.aportaTerreno ? 0 : (Number(v.costoCompraTerreno) || 0);
 
     // Preoperativos: suma dinámica de showroom items
@@ -1834,6 +1830,8 @@ const App = (() => {
     const preoperativos = showroomItems.reduce((s, it) => s + (Number(it.cantidad) * Number(it.costo)), 0);
     const obraItems = state.obraItems || [];
     const obraTotal = obraItems.reduce((s, it) => s + (Number(it.cantidad) * Number(it.costo)), 0);
+    // Costo paramétrico derivado del detalle (informativo)
+    const costoM2Derivado = m2TotalConstruir > 0 ? obraTotal / m2TotalConstruir : 0;
 
     // Comisiones de venta: % solo sobre tickets VENDIDOS (no aportados, no modelo)
     const comisionPct = Number(e.comisionVentasPct) || 0;
@@ -1842,7 +1840,7 @@ const App = (() => {
       .reduce((s, t) => s + (Number(t.cantidad) * Number(t.precio)), 0);
     const comisionVentas = totalVendidos * (comisionPct / 100);
 
-    const presupuestoCompleto = totalObra + terreno + preoperativos + comisionVentas;
+    const presupuestoCompleto = obraTotal + terreno + preoperativos + comisionVentas;
 
     return `<div class="section-header">
       <div>
@@ -1865,15 +1863,15 @@ const App = (() => {
             <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--text-muted);"><span>Estacionamiento Rentado:</span> <strong>${m2SuperficieRentadaEstacionamiento.toLocaleString()} m² <span style="font-size:10px">(Excluido)</span></strong></div>
             <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#C5A059; margin-top:8px; border-top:1px solid #ddd; padding-top:8px;"><span>Total Obra Gris:</span> <span>${m2TotalConstruir.toLocaleString()} m²</span></div>
           </div>
-          <div>
+          <div style="background:#f9fbfd; padding:12px; border-radius:6px; border:1px solid #e1e8ed;">
             <label style="font-size:11px; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:6px">Costo Paramétrico M² Construcción</label>
-            <input type="text" class="form-input" style="width:100%; border:1px solid #ddd; padding:8px; border-radius:4px; font-size:16px; font-weight:600; color:var(--navy);"
-              value="${M(v.costoM2Construccion)}" data-key="costoM2Construccion" data-nested="variables">
+            <div style="font-size:20px; font-weight:700; color:var(--navy);">${M(costoM2Derivado)}<span style="font-size:11px; font-weight:400; color:var(--text-muted); margin-left:6px;">/m²</span></div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">Total detalle ÷ ${m2TotalConstruir.toLocaleString()} m² · Solo informativo</div>
           </div>
         </div>
         <div style="padding:16px; background:rgba(30,41,59,0.03); border-radius:6px; border:1px dashed #cbd5e1; text-align:right;">
           <span style="font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-right:12px;">Total de Obra Civil Directa:</span>
-          <span style="font-size:22px; font-weight:700; color:var(--navy);">${M(totalObra)}</span>
+          <span style="font-size:22px; font-weight:700; color:var(--navy);">${M(obraTotal)}</span>
         </div>
       </div>
 
